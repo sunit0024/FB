@@ -5,10 +5,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'game.dart';
 import 'components/audio_manager.dart';
+import 'components/power_up.dart';
 
 /// ──────────────────────────────────────────────────────────────────────────────
 /// Entry‑point  –  wraps the Flame [GameWidget] with Flutter overlay widgets
-/// for the Main Menu, Score HUD, and Game‑Over screen.
+/// for the Main Menu, Score HUD, Power‑Up HUD, and Game‑Over screen.
 /// ──────────────────────────────────────────────────────────────────────────────
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -79,6 +80,7 @@ class _GamePageState extends State<GamePage> {
                 audio: game.audio,
               ),
           'ScoreHUD': (context, game) => _ScoreHUD(game: game),
+          'PowerUpHUD': (context, game) => _PowerUpHUD(game: game),
           'GameOver': (context, game) => _GameOverOverlay(
                 score: game.score,
                 highScore: _highScore,
@@ -273,6 +275,209 @@ class _ScoreHUD extends StatelessWidget {
                 Text('$value', style: _neonStyle(48, Colors.white)),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  POWER‑UP HUD  –  Extra Life indicator  +  active power countdown bars
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _PowerUpHUD extends StatelessWidget {
+  final FlappyBirdGame game;
+  const _PowerUpHUD({required this.game});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Stack(
+        children: [
+          // ── Extra Life indicator (top‑left) ─────────────────────────────
+          Positioned(
+            top: 18,
+            left: 16,
+            child: ValueListenableBuilder<bool>(
+              valueListenable: game.extraLifeNotifier,
+              builder: (_, hasLife, __) {
+                return AnimatedOpacity(
+                  opacity: hasLife ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 300),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                          color: const Color(0xFFFF69B4).withOpacity(0.7),
+                          width: 1.5),
+                      color: const Color(0xFFFF69B4).withOpacity(0.15),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFFF69B4).withOpacity(0.3),
+                          blurRadius: 12,
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.favorite,
+                            color: Color(0xFFFF69B4), size: 18),
+                        const SizedBox(width: 5),
+                        Text(
+                          'EXTRA LIFE',
+                          style: GoogleFonts.orbitron(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFFFF69B4),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+
+          // ── Active power countdown bars (top‑centre, below score) ───────
+          Positioned(
+            top: 76,
+            left: 24,
+            right: 24,
+            child: ValueListenableBuilder<List<ActivePower>>(
+              valueListenable: game.activePowersNotifier,
+              builder: (_, powers, __) {
+                if (powers.isEmpty) return const SizedBox.shrink();
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: powers.map((p) => _PowerBar(power: p)).toList(),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A single shrinking progress bar for an active timed power‑up.
+class _PowerBar extends StatelessWidget {
+  final ActivePower power;
+  const _PowerBar({required this.power});
+
+  Color get _color {
+    switch (power.type) {
+      case PowerUpType.ghostMode:
+        return const Color(0xFF00FFFF);
+      case PowerUpType.timeWarp:
+        return const Color(0xFFBB66FF);
+      case PowerUpType.miniBird:
+        return const Color(0xFFFFDD00);
+      case PowerUpType.extraLife:
+        return const Color(0xFFFF69B4);
+    }
+  }
+
+  String get _label {
+    switch (power.type) {
+      case PowerUpType.ghostMode:
+        return 'GHOST';
+      case PowerUpType.timeWarp:
+        return 'SLOW';
+      case PowerUpType.miniBird:
+        return 'MINI';
+      case PowerUpType.extraLife:
+        return 'LIFE';
+    }
+  }
+
+  IconData get _icon {
+    switch (power.type) {
+      case PowerUpType.ghostMode:
+        return Icons.visibility_off;
+      case PowerUpType.timeWarp:
+        return Icons.slow_motion_video;
+      case PowerUpType.miniBird:
+        return Icons.compress;
+      case PowerUpType.extraLife:
+        return Icons.favorite;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final fraction =
+        (power.remaining / power.total).clamp(0.0, 1.0);
+    final isLow = power.remaining <= 2.0;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          // Icon + label
+          Icon(_icon, color: _color, size: 14),
+          const SizedBox(width: 4),
+          SizedBox(
+            width: 40,
+            child: Text(
+              _label,
+              style: GoogleFonts.orbitron(
+                fontSize: 8,
+                fontWeight: FontWeight.bold,
+                color: _color,
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          // Progress bar
+          Expanded(
+            child: Container(
+              height: 10,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(5),
+                color: Colors.white.withOpacity(0.08),
+                border: Border.all(
+                  color: _color.withOpacity(0.3),
+                  width: 0.5,
+                ),
+              ),
+              child: FractionallySizedBox(
+                alignment: Alignment.centerLeft,
+                widthFactor: fraction,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(5),
+                    color: isLow
+                        ? _color.withOpacity(0.9)
+                        : _color.withOpacity(0.7),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _color.withOpacity(isLow ? 0.8 : 0.4),
+                        blurRadius: isLow ? 10 : 6,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          // Seconds remaining
+          SizedBox(
+            width: 28,
+            child: Text(
+              '${power.remaining.ceil()}s',
+              style: GoogleFonts.orbitron(
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+                color: isLow ? Colors.redAccent : _color,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

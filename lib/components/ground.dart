@@ -27,7 +27,8 @@ class Ground extends PositionComponent with HasGameRef<FlappyBirdGame> {
   void update(double dt) {
     super.update(dt);
     if (scrolling) {
-      _scrollX += gameRef.currentSpeed * dt;
+      // ★ Uses effectiveSpeed so Time Warp also slows the ground.
+      _scrollX += gameRef.effectiveSpeed * dt;
     }
   }
 

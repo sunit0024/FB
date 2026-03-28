@@ -16,14 +16,15 @@ class Pipe extends PositionComponent with HasGameRef<FlappyBirdGame> {
           position: pipePosition,
           size: pipeSize,
           anchor: Anchor.topLeft,
-          priority: 2, // above background (0), below player (5)
+          priority: 2,
         );
 
   final bool isTop;
 
-  // Neon palette.
-  static const Color _pipeColor = Color(0xFF00FF88);
-  static const Color _pipeEdge = Color(0xFF00FFAA);
+  // Light green palette.
+  static const Color _pipeColor = Color(0xFF90EE90);
+  static const Color _pipeEdge = Color(0xFFAAFFAA);
+  static const Color _pipeHighlight = Color(0xFFD0FFD0);
 
   @override
   Future<void> onLoad() async {
@@ -34,7 +35,8 @@ class Pipe extends PositionComponent with HasGameRef<FlappyBirdGame> {
   void update(double dt) {
     super.update(dt);
     if (gameRef.state != GameState.playing) return;
-    position.x -= gameRef.currentSpeed * dt;
+    // ★ Uses effectiveSpeed so Time Warp slows pipes down.
+    position.x -= gameRef.effectiveSpeed * dt;
   }
 
   @override
@@ -58,7 +60,7 @@ class Pipe extends PositionComponent with HasGameRef<FlappyBirdGame> {
 
     // Inner vertical stripe highlights.
     final stripePaint = Paint()
-      ..color = const Color(0xFF66FFCC).withOpacity(0.12)
+      ..color = _pipeHighlight.withOpacity(0.15)
       ..strokeWidth = 1.5;
     canvas.drawLine(
         Offset(size.x * 0.3, 0), Offset(size.x * 0.3, size.y), stripePaint);
@@ -94,7 +96,7 @@ class Pipe extends PositionComponent with HasGameRef<FlappyBirdGame> {
         Offset(capRect.right, 0),
         [
           _pipeEdge.withOpacity(0.5),
-          const Color(0xFFAAFFDD),
+          _pipeHighlight,
           _pipeEdge.withOpacity(0.5),
         ],
         [0.0, 0.5, 1.0],
@@ -115,7 +117,6 @@ class Pipe extends PositionComponent with HasGameRef<FlappyBirdGame> {
 
 /// ──────────────────────────────────────────────────────────────────────────────
 /// An invisible scoring zone placed between a pipe pair.
-/// Uses position‑based detection (no hitbox needed) to increment score.
 /// ──────────────────────────────────────────────────────────────────────────────
 class PipeScoreZone extends PositionComponent
     with HasGameRef<FlappyBirdGame> {
@@ -128,9 +129,9 @@ class PipeScoreZone extends PositionComponent
   void update(double dt) {
     super.update(dt);
     if (gameRef.state != GameState.playing) return;
-    position.x -= gameRef.currentSpeed * dt;
+    // ★ Uses effectiveSpeed so scoring zone moves in sync.
+    position.x -= gameRef.effectiveSpeed * dt;
 
-    // Score when the trailing edge of the pipe passes the player X.
     final playerX = gameRef.size.x * 0.25;
     if (!_scored && position.x + size.x < playerX) {
       _scored = true;
@@ -141,8 +142,8 @@ class PipeScoreZone extends PositionComponent
 
 /// Shared pipe constants.
 abstract class PipeConstants {
-  static const double baseSpeed = 200; // px/s (starting speed)
+  static const double baseSpeed = 200;
   static const double width = 64;
-  static const double gapSize = 160; // vertical gap between pipes
-  static const double spawnInterval = 1.8; // seconds between pairs
+  static const double gapSize = 160;
+  static const double spawnInterval = 1.8;
 }

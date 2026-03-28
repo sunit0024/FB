@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
+import '../game.dart';
 
 /// ──────────────────────────────────────────────────────────────────────────────
 /// NeonBackground – a multi‑layered parallax background drawn entirely
@@ -12,7 +13,8 @@ import 'package:flutter/material.dart';
 ///   4. Procedural city skyline with lit windows (medium scroll)
 ///   5. Soft glowing clouds (varied scroll)
 /// ──────────────────────────────────────────────────────────────────────────────
-class NeonBackground extends PositionComponent with HasGameRef {
+class NeonBackground extends PositionComponent
+    with HasGameRef<FlappyBirdGame> {
   NeonBackground() : super(priority: 0);
 
   bool scrolling = false;
@@ -49,10 +51,13 @@ class NeonBackground extends PositionComponent with HasGameRef {
     super.update(dt);
     _time += dt;
     if (!scrolling) return;
-    _starsOffset += 10 * dt;
-    _mountainOffset += 25 * dt;
-    _cloudOffset += 50 * dt;
-    _cityOffset += 70 * dt;
+
+    // ★ Apply speed multiplier so Time Warp slows background too.
+    final sm = gameRef.speedMultiplier;
+    _starsOffset += 10 * dt * sm;
+    _mountainOffset += 25 * dt * sm;
+    _cloudOffset += 50 * dt * sm;
+    _cityOffset += 70 * dt * sm;
   }
 
   @override
@@ -136,7 +141,6 @@ class NeonBackground extends PositionComponent with HasGameRef {
     final startX = -(offset % (buildingWidth + spacing));
 
     for (double x = startX; x < totalW; x += buildingWidth + spacing) {
-      // Deterministic random per building slot.
       final slot = ((x + offset) / (buildingWidth + spacing)).floor();
       final bRng = Random(slot * 17 + 3);
       final bHeight = 40 + bRng.nextDouble() * 100;
@@ -144,7 +148,6 @@ class NeonBackground extends PositionComponent with HasGameRef {
           x, baseY - bHeight, buildingWidth, bHeight + 200);
       canvas.drawRect(rect, Paint()..color = buildingColor);
 
-      // Neon edge highlight on rooftop.
       canvas.drawLine(
         Offset(x, baseY - bHeight),
         Offset(x + buildingWidth, baseY - bHeight),
@@ -154,7 +157,6 @@ class NeonBackground extends PositionComponent with HasGameRef {
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
       );
 
-      // Little lit windows.
       for (double wy = baseY - bHeight + 8; wy < baseY - 8; wy += 12) {
         for (double wx = x + 6; wx < x + buildingWidth - 6; wx += 10) {
           if (bRng.nextDouble() > 0.4) {

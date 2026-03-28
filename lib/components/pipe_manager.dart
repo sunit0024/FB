@@ -20,9 +20,9 @@ class PipeManager extends Component with HasGameRef<FlappyBirdGame> {
     super.update(dt);
     if (gameRef.state != GameState.playing) return;
 
-    // Spawn interval shrinks slightly as difficulty increases.
+    // Spawn interval uses effectiveSpeed so Time Warp slows spawns too.
     final interval = PipeConstants.spawnInterval *
-        (PipeConstants.baseSpeed / gameRef.currentSpeed);
+        (PipeConstants.baseSpeed / gameRef.effectiveSpeed);
 
     _timer += dt;
     if (_timer >= interval) {
