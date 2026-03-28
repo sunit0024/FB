@@ -145,5 +145,6 @@ abstract class PipeConstants {
   static const double baseSpeed = 200;
   static const double width = 64;
   static const double gapSize = 160;
-  static const double spawnInterval = 1.8;
+  /// Spawn interval increased from 1.8 → 2.25 (1.25× the original distance).
+  static const double spawnInterval = 2.25;
 }
