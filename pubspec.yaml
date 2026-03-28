@@ -1,0 +1,25 @@
+name: flappy_bird_neon
+description: A vibrant neon Flappy Bird clone built with Flutter and Flame.
+publish_to: 'none'
+version: 1.0.0
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flame: ^1.21.0
+  shared_preferences: ^2.2.2
+  google_fonts: ^6.1.0
+  audioplayers: ^6.1.0
+  path_provider: ^2.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
